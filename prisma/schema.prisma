@@ -1,15 +1,427 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
+// prisma/schema.prisma
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── ENUMS ─────────────────────────────────────────────────────────────────
+
+enum Locale {
+  EN
+  VI
+}
+
+enum LanguageCode {
+  EN
+  KO
+}
+
+enum ExamType {
+  IELTS
+  TOEFL
+  TOPIK_I
+  TOPIK_II
+}
+
+enum LevelCode {
+  A1
+  A2
+  B1
+  B2
+  C1
+  C2
+  TOPIK_I
+  TOPIK_II
+}
+
+enum LessonType {
+  READING
+  LISTENING
+  VIDEO
+  GRAMMAR
+  SPEAKING
+}
+
+enum QuestionType {
+  MCQ
+  FILL_BLANK
+  PRONUNCIATION
+  WRITING
+}
+
+enum ProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum VocabStatus {
+  LEARNING
+  REVIEW
+  MASTERED
+}
+
+enum NotifType {
+  STREAK_REMINDER
+  BADGE_EARNED
+  CERT_READY
+  LEVEL_UP
+}
+
+// ─── AUTH (NextAuth v5 required tables) ────────────────────────────────────
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
+  emailVerified  DateTime?
+  image          String?
+  hashedPassword String?
+  preferredLocale Locale   @default(VI)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  progress        UserProgress[]
+  lessonProgress  UserLessonProgress[]
+  quizAttempts    UserQuizAttempt[]
+  certificates    Certificate[]
+  badges          UserBadge[]
+  vocabulary      UserVocabulary[]
+  feedbacks       GrammarFeedback[]
+  notifications   Notification[]
+
+  @@map("users")
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── LEARNING STRUCTURE ────────────────────────────────────────────────────
+
+model ExamTrack {
+  id              String       @id @default(cuid())
+  languageCode    LanguageCode
+  examType        ExamType
+  nameKey         String
+  descriptionKey  String
+
+  levels       Level[]
+  certificates Certificate[]
+
+  @@unique([languageCode, examType])
+  @@map("exam_tracks")
+}
+
+model Level {
+  id          String    @id @default(cuid())
+  examTrackId String
+  code        LevelCode
+  order       Int
+  nameKey     String
+
+  examTrack    ExamTrack     @relation(fields: [examTrackId], references: [id])
+  lessons      Lesson[]
+  certificates Certificate[]
+
+  @@unique([examTrackId, code])
+  @@map("levels")
+}
+
+model Lesson {
+  id           String      @id @default(cuid())
+  levelId      String
+  type         LessonType
+  titleKey     String
+  slug         String      @unique
+  contentJson  Json
+  audioUrl     String?
+  videoUrl     String?
+  thumbnailUrl String?
+  durationSec  Int?
+  order        Int
+  publishedAt  DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  level        Level                @relation(fields: [levelId], references: [id])
+  vocabulary   LessonVocabulary[]
+  quizzes      Quiz[]
+  userProgress UserLessonProgress[]
+  feedbacks    GrammarFeedback[]
+
+  @@map("lessons")
+}
+
+// ─── VOCABULARY ────────────────────────────────────────────────────────────
+
+model Vocabulary {
+  id            String       @id @default(cuid())
+  languageCode  LanguageCode
+  word          String
+  pronunciation String?
+  audioUrl      String?
+  definitionKey String
+  examplesJson  Json
+
+  lessons   LessonVocabulary[]
+  userVocab UserVocabulary[]
+
+  @@map("vocabulary")
+}
+
+model LessonVocabulary {
+  lessonId     String
+  vocabularyId String
+
+  lesson     Lesson     @relation(fields: [lessonId], references: [id])
+  vocabulary Vocabulary @relation(fields: [vocabularyId], references: [id])
+
+  @@id([lessonId, vocabularyId])
+  @@map("lesson_vocabulary")
+}
+
+// ─── QUIZZES ───────────────────────────────────────────────────────────────
+
+model Quiz {
+  id           String @id @default(cuid())
+  lessonId     String
+  titleKey     String
+  passingScore Int    @default(70)
+
+  lesson    Lesson          @relation(fields: [lessonId], references: [id])
+  questions QuizQuestion[]
+  attempts  UserQuizAttempt[]
+
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id             String       @id @default(cuid())
+  quizId         String
+  type           QuestionType
+  questionKey    String
+  optionsJson    Json?
+  correctAnswer  String
+  explanationKey String?
+  points         Int          @default(10)
+  order          Int
+
+  quiz    Quiz             @relation(fields: [quizId], references: [id])
+  answers UserQuizAnswer[]
+
+  @@map("quiz_questions")
+}
+
+// ─── USER PROGRESS ─────────────────────────────────────────────────────────
+
+model UserProgress {
+  id                    String       @id @default(cuid())
+  userId                String
+  languageCode          LanguageCode
+  xp                    Int          @default(0)
+  currentStreak         Int          @default(0)
+  longestStreak         Int          @default(0)
+  lastActiveDate        DateTime?
+  totalLessonsCompleted Int          @default(0)
+  totalQuizzesPassed    Int          @default(0)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, languageCode])
+  @@map("user_progress")
+}
+
+model UserLessonProgress {
+  id          String         @id @default(cuid())
+  userId      String
+  lessonId    String
+  status      ProgressStatus @default(NOT_STARTED)
+  score       Int?
+  attempts    Int            @default(0)
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  user   User   @relation(fields: [userId], references: [id])
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, lessonId])
+  @@map("user_lesson_progress")
+}
+
+model UserQuizAttempt {
+  id          String    @id @default(cuid())
+  userId      String
+  quizId      String
+  score       Int
+  totalPoints Int
+  passed      Boolean
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  user    User             @relation(fields: [userId], references: [id])
+  quiz    Quiz             @relation(fields: [quizId], references: [id])
+  answers UserQuizAnswer[]
+
+  @@map("user_quiz_attempts")
+}
+
+model UserQuizAnswer {
+  id           String @id @default(cuid())
+  attemptId    String
+  questionId   String
+  userAnswer   String
+  isCorrect    Boolean
+  feedbackText String?
+  pointsEarned Int
+
+  attempt  UserQuizAttempt @relation(fields: [attemptId], references: [id])
+  question QuizQuestion    @relation(fields: [questionId], references: [id])
+
+  @@map("user_quiz_answers")
+}
+
+model UserVocabulary {
+  id           String      @id @default(cuid())
+  userId       String
+  vocabularyId String
+  status       VocabStatus @default(LEARNING)
+  nextReviewAt DateTime?
+
+  user       User       @relation(fields: [userId], references: [id])
+  vocabulary Vocabulary @relation(fields: [vocabularyId], references: [id])
+
+  @@unique([userId, vocabularyId])
+  @@map("user_vocabulary")
+}
+
+// ─── FEEDBACK ──────────────────────────────────────────────────────────────
+
+model GrammarFeedback {
+  id            String   @id @default(cuid())
+  userId        String
+  lessonId      String
+  submittedText String
+  feedbackJson  Json
+  createdAt     DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+
+  @@map("grammar_feedback")
+}
+
+// ─── CERTIFICATES ──────────────────────────────────────────────────────────
+
+model Certificate {
+  id                String   @id @default(cuid())
+  userId            String
+  examTrackId       String
+  levelId           String
+  verificationCode  String   @unique @default(uuid())
+  pdfUrl            String?
+  scoresSummaryJson Json?
+  issuedAt          DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id])
+  examTrack ExamTrack @relation(fields: [examTrackId], references: [id])
+  level     Level     @relation(fields: [levelId], references: [id])
+
+  @@map("certificates")
+}
+
+// ─── GAMIFICATION ──────────────────────────────────────────────────────────
+
+model Badge {
+  id             String @id @default(cuid())
+  nameKey        String
+  descriptionKey String
+  icon           String
+  conditionJson  Json
+
+  users UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  userId   String
+  badgeId  String
+  earnedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  badge Badge @relation(fields: [badgeId], references: [id])
+
+  @@id([userId, badgeId])
+  @@map("user_badges")
+}
+
+model LeaderboardSnapshot {
+  id           String       @id @default(cuid())
+  userId       String
+  languageCode LanguageCode
+  xp           Int
+  rank         Int
+  weekOf       DateTime
+
+  @@unique([userId, languageCode, weekOf])
+  @@map("leaderboard_snapshots")
+}
+
+// ─── NOTIFICATIONS ─────────────────────────────────────────────────────────
+
+model Notification {
+  id         String    @id @default(cuid())
+  userId     String
+  type       NotifType
+  titleKey   String
+  messageKey String
+  read       Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
 }
