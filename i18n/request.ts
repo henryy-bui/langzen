@@ -11,6 +11,6 @@ export default getRequestConfig(async ({ requestLocale }) => {
 
   return {
     locale,
-    messages: (await import(`../messages/${locale}.json`)) as AbstractIntlMessages,
+    messages: ((await import(`../messages/${locale}.json`)) as { default: AbstractIntlMessages }).default,
   };
 });
