@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { SessionProvider } from "next-auth/react";
+import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { LOCALES, type Locale } from "@/config";
 import "../globals.css";
@@ -33,11 +34,12 @@ export default async function LocaleLayout({
   if (!LOCALES.includes(locale as Locale)) notFound();
 
   const messages = await getMessages();
+  const session = await auth();
 
   return (
     <html lang={locale}>
       <body className={inter.className}>
-        <SessionProvider>
+        <SessionProvider session={session}>
           <NextIntlClientProvider messages={messages}>
             {children}
           </NextIntlClientProvider>
