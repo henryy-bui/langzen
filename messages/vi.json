@@ -33,5 +33,45 @@
     "title": "404",
     "message": "Không tìm thấy trang.",
     "home": "Về trang chủ"
+  },
+  "auth": {
+    "login": {
+      "title": "Chào mừng trở lại",
+      "subtitle": "Đăng nhập vào tài khoản LangZen của bạn",
+      "email": "Email",
+      "emailPlaceholder": "ban@example.com",
+      "password": "Mật khẩu",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Đăng nhập",
+      "google": "Tiếp tục với Google",
+      "noAccount": "Chưa có tài khoản?",
+      "registerLink": "Đăng ký",
+      "invalidCredentials": "Email hoặc mật khẩu không đúng",
+      "error": "Đã xảy ra lỗi. Vui lòng thử lại."
+    },
+    "register": {
+      "title": "Tạo tài khoản của bạn",
+      "subtitle": "Bắt đầu học tiếng Anh và tiếng Hàn ngay hôm nay",
+      "name": "Họ và tên",
+      "namePlaceholder": "Nguyễn Văn A",
+      "email": "Email",
+      "emailPlaceholder": "ban@example.com",
+      "password": "Mật khẩu",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Tạo tài khoản",
+      "google": "Tiếp tục với Google",
+      "hasAccount": "Đã có tài khoản?",
+      "loginLink": "Đăng nhập",
+      "emailTaken": "Email đã được sử dụng",
+      "error": "Đã xảy ra lỗi. Vui lòng thử lại."
+    },
+    "verify": {
+      "title": "Xác minh email của bạn",
+      "subtitle": "Chúng tôi đã gửi liên kết xác minh đến email của bạn",
+      "checkEmail": "Vui lòng kiểm tra hộp thư và nhấp vào liên kết để xác minh.",
+      "success": "Email đã được xác minh! Bạn có thể đăng nhập ngay.",
+      "invalid": "Liên kết xác minh không hợp lệ hoặc đã hết hạn.",
+      "resend": "Gửi lại email xác minh"
+    }
   }
 }
