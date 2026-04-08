@@ -28,5 +28,10 @@
   "locale": {
     "en": "English",
     "vi": "Tiếng Việt"
+  },
+  "notFound": {
+    "title": "404",
+    "message": "Không tìm thấy trang.",
+    "home": "Về trang chủ"
   }
 }
