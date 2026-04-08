@@ -1,0 +1,32 @@
+{
+  "nav": {
+    "learn": "Learn",
+    "vocabulary": "Vocabulary",
+    "leaderboard": "Leaderboard",
+    "certificates": "Certificates",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "logout": "Log out",
+    "login": "Log in",
+    "register": "Sign up"
+  },
+  "home": {
+    "title": "Learn English & Korean",
+    "subtitle": "Prepare for IELTS, TOEFL, TOPIK and earn certificates that prove your level.",
+    "cta": "Start Learning Free"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong.",
+    "retry": "Try again",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit"
+  },
+  "locale": {
+    "en": "English",
+    "vi": "Tiếng Việt"
+  }
+}
